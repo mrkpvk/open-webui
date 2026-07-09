@@ -16,6 +16,7 @@
 	import Markdown from './Markdown.svelte';
 	import Image from '$lib/components/common/Image.svelte';
 	import DeleteConfirmDialog from '$lib/components/common/ConfirmDialog.svelte';
+	import MessageParamsPopover from './MessageParamsPopover.svelte';
 
 	import localizedFormat from 'dayjs/plugin/localizedFormat';
 
@@ -36,6 +37,7 @@
 
 	export let editMessage: Function;
 	export let deleteMessage: Function;
+	export let saveMessage: Function = () => {};
 
 	export let isFirstMessage: boolean;
 	export let readOnly: boolean;
@@ -549,6 +551,22 @@
 							</button>
 						</Tooltip>
 					{/if}
+
+					<!-- Per-message parameter override -->
+					<span class="relative inline-block">
+						<MessageParamsPopover
+							{message}
+							chatParams={{}}
+							onSave={(newOverride) => {
+								if (newOverride) {
+									saveMessage(messageId, { ...history.messages[messageId], paramsOverride: newOverride });
+								} else {
+									const { paramsOverride: _po, ...rest } = history.messages[messageId];
+									saveMessage(messageId, rest);
+								}
+							}}
+						/>
+					</span>
 
 					{#if $_user?.role === 'admin' || ($_user?.permissions?.chat?.delete_message ?? false)}
 						{#if !readOnly && (!isFirstMessage || siblings.length > 1)}

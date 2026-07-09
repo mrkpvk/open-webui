@@ -58,6 +58,7 @@
 	import { KokoroWorker } from '$lib/workers/KokoroWorker';
 	import FileItem from '$lib/components/common/FileItem.svelte';
 	import FollowUps from './ResponseMessage/FollowUps.svelte';
+	import MessageParamsPopover from './MessageParamsPopover.svelte';
 	import { fade } from 'svelte/transition';
 	import { flyAndScale } from '$lib/utils/transitions';
 	import RegenerateMenu from './ResponseMessage/RegenerateMenu.svelte';
@@ -1068,6 +1069,22 @@
 										</svg>
 									</button>
 								</Tooltip>
+
+								<!-- Per-message parameter override -->
+								<span class="relative inline-block">
+									<MessageParamsPopover
+										{message}
+										chatParams={{}}
+										onSave={(newOverride) => {
+											if (newOverride) {
+												saveMessage(messageId, { ...history.messages[messageId], paramsOverride: newOverride });
+											} else {
+												const { paramsOverride: _po, ...rest } = history.messages[messageId];
+												saveMessage(messageId, rest);
+											}
+										}}
+									/>
+								</span>
 
 								{#if !readOnly && ($user?.role === 'admin' || ($user?.permissions?.chat?.tts ?? true))}
 									<Tooltip content={$i18n.t('Read Aloud')} placement="bottom">

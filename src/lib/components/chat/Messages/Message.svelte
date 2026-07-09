@@ -69,6 +69,7 @@
 				{showNextMessage}
 				{editMessage}
 				{deleteMessage}
+				{saveMessage}
 				{readOnly}
 				{editCodeBlock}
 				{topPadding}

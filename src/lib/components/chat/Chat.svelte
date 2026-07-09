@@ -104,6 +104,7 @@
 	import Banner from '../common/Banner.svelte';
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
 	import Messages from '$lib/components/chat/Messages.svelte';
+	import RawContextEditor from '$lib/components/chat/RawContextEditor.svelte';
 	import Navbar from '$lib/components/chat/Navbar.svelte';
 	import ChatControls from './ChatControls.svelte';
 	import EventConfirmDialog from '../common/ConfirmDialog.svelte';
@@ -228,6 +229,33 @@
 
 	let taskIds = null;
 
+	// Raw context editor toggle
+	let showRawEditor = false;
+
+	// Silent background re-titling: how many *new* messages must accumulate
+	// since the last auto-retitle before we fire another one, so topic drift
+	// updates the title without spamming the title-generation model on every turn.
+	const AUTO_RETITLE_MESSAGE_INTERVAL = 6;
+	let lastAutoRetitleMessageCount = 0;
+
+	// Decides whether this outgoing request should silently ask the backend to
+	// regenerate the chat title from the latest conversation window. Only fires
+	// periodically (debounced by message count) on chats that already have a
+	// title (the very first message is handled separately, above).
+	const shouldAutoRetitle = (_messages) => {
+		if (!($settings?.title?.auto ?? true)) return false;
+
+		const count = (_messages ?? []).length;
+		if (count < AUTO_RETITLE_MESSAGE_INTERVAL) return false;
+
+		if (count - lastAutoRetitleMessageCount >= AUTO_RETITLE_MESSAGE_INTERVAL) {
+			lastAutoRetitleMessageCount = count;
+			return true;
+		}
+
+		return false;
+	};
+
 	// Chat Input
 	let prompt = '';
 	let chatFiles = [];
@@ -254,6 +282,9 @@
 		clearTimeout(saveControlsTimer);
 		await saveControls();
 		loading = true;
+
+		lastAutoRetitleMessageCount = 0;
+		showRawEditor = false;
 
 		prompt = '';
 		messageInput?.setText('');
@@ -2554,7 +2585,8 @@
 				params: {
 					...$settings?.params,
 					...params,
-					stop: getStopTokens()
+					...(userMessage?.paramsOverride ?? {}),
+					stop: (userMessage?.paramsOverride?.stop ?? getStopTokens())
 				},
 
 				files: (files?.length ?? 0) > 0 ? files : undefined,
@@ -2597,6 +2629,9 @@
 								title_generation: $settings?.title?.auto ?? true,
 								tags_generation: $settings?.autoTags ?? true
 							}
+						: {}),
+					...(!$temporaryChatEnabled && _chatId && shouldAutoRetitle(_messages)
+						? { title_generation: $settings?.title?.auto ?? true }
 						: {}),
 					follow_up_generation: $settings?.autoFollowUps ?? true
 				},
@@ -3178,6 +3213,8 @@
 					<Navbar
 						bind:this={navbarElement}
 						{readOnly}
+						{showRawEditor}
+						onToggleRawEditor={() => { showRawEditor = !showRawEditor; }}
 						chat={{
 							id: $chatId,
 							chat: {
@@ -3251,30 +3288,43 @@
 								}}
 							>
 								<div class=" h-full w-full flex flex-col">
-									<Messages
-										bind:this={messagesRef}
-										chatId={$chatId}
-										{readOnly}
-										bind:history
-										bind:autoScroll
-										bind:prompt
-										setInputText={(text) => {
-											messageInput?.setText(text);
-										}}
-										{selectedModels}
-										{atSelectedModel}
-										{sendMessage}
-										{showMessage}
-										{submitMessage}
-										{continueResponse}
-										{regenerateResponse}
-										{mergeResponses}
-										{chatActionHandler}
-										{addMessages}
-										topPadding={true}
-										bottomPadding={files.length > 0}
-										{onSelect}
-									/>
+									{#if showRawEditor && $chatId}
+										<RawContextEditor
+											{history}
+											chatId={$chatId}
+											onApply={async (newHistory) => {
+												history = newHistory;
+												await saveChatHandler($chatId, history);
+												showRawEditor = false;
+											}}
+											onClose={() => { showRawEditor = false; }}
+										/>
+									{:else}
+										<Messages
+											bind:this={messagesRef}
+											chatId={$chatId}
+											{readOnly}
+											bind:history
+											bind:autoScroll
+											bind:prompt
+											setInputText={(text) => {
+												messageInput?.setText(text);
+											}}
+											{selectedModels}
+											{atSelectedModel}
+											{sendMessage}
+											{showMessage}
+											{submitMessage}
+											{continueResponse}
+											{regenerateResponse}
+											{mergeResponses}
+											{chatActionHandler}
+											{addMessages}
+											topPadding={true}
+											bottomPadding={files.length > 0}
+											{onSelect}
+										/>
+									{/if}
 								</div>
 							</div>
 
