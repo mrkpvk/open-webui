@@ -1,0 +1,1 @@
+- [Ollama sampling param status](ollama-sampling-params.md) — typical_p native; no_repeat_ngram_size post-hoc; min_length/ignore_eos/logit_bias not feasible via Ollama

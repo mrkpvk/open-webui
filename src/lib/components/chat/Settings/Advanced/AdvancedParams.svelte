@@ -28,6 +28,7 @@
 		top_k: null,
 		top_p: null,
 		min_p: null,
+		typical_p: null,
 		frequency_penalty: null,
 		presence_penalty: null,
 		mirostat: null,
@@ -36,6 +37,7 @@
 		repeat_last_n: null,
 		tfs_z: null,
 		repeat_penalty: null,
+		no_repeat_ngram_size: null,
 		use_mmap: null,
 		use_mlock: null,
 		think: null,
@@ -486,14 +488,14 @@
 	<div class=" py-0.5 w-full justify-between">
 		<Tooltip
 			content={$i18n.t(
-				'Boosting or penalizing specific tokens for constrained responses. Bias values will be clamped between -100 and 100 (inclusive). (Default: none)'
+				'Boosting or penalizing specific tokens for constrained responses. Bias values will be clamped between -100 and 100 (inclusive). Only supported by OpenAI-compatible APIs — has no effect when using Ollama. (Default: none)'
 			)}
 			placement="top-start"
 			className="inline-tooltip"
 		>
 			<div class="flex w-full justify-between">
 				<div class=" self-center text-xs">
-					{'logit_bias'}
+					{'logit_bias'} ({$i18n.t('OpenAI-compatible only')})
 				</div>
 				<button
 					class="p-1 px-3 text-xs flex rounded-sm transition shrink-0 outline-hidden"
@@ -738,6 +740,61 @@
 				<div>
 					<input
 						bind:value={params.min_p}
+						type="number"
+						class=" bg-transparent text-center w-14"
+						min="0"
+						max="1"
+						step="any"
+					/>
+				</div>
+			</div>
+		{/if}
+	</div>
+
+	<div class=" py-0.5 w-full justify-between">
+		<Tooltip
+			content={$i18n.t(
+				'Locally-typical sampling. Selects tokens whose information content is close to the expected value. A value of 1.0 disables it. Lower values (e.g. 0.8) improve coherence by avoiding very unlikely tokens. Supported natively by Ollama (typical_p in options).'
+			)}
+			placement="top-start"
+			className="inline-tooltip"
+		>
+			<div class="flex w-full justify-between">
+				<div class=" self-center text-xs">
+					{'typical_p'} ({$i18n.t('Ollama')})
+				</div>
+				<button
+					class="p-1 px-3 text-xs flex rounded-sm transition shrink-0 outline-hidden"
+					type="button"
+					on:click={() => {
+						params.typical_p = (params?.typical_p ?? null) === null ? 1.0 : null;
+					}}
+				>
+					{#if (params?.typical_p ?? null) === null}
+						<span class="ml-2 self-center">{$i18n.t('Default')}</span>
+					{:else}
+						<span class="ml-2 self-center">{$i18n.t('Custom')}</span>
+					{/if}
+				</button>
+			</div>
+		</Tooltip>
+
+		{#if (params?.typical_p ?? null) !== null}
+			<div class="flex mt-0.5 space-x-2">
+				<div class=" flex-1">
+					<input
+						id="steps-range"
+						type="range"
+						min="0"
+						max="1"
+						step="0.05"
+						bind:value={params.typical_p}
+						class="w-full h-2 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+					/>
+				</div>
+				<div>
+					<input
+						bind:value={params.typical_p}
 						type="number"
 						class=" bg-transparent text-center w-14"
 						min="0"
@@ -1185,6 +1242,65 @@
 						min="-2"
 						max="2"
 						step="any"
+					/>
+				</div>
+			</div>
+		{/if}
+	</div>
+
+	<div class=" py-0.5 w-full justify-between">
+		<Tooltip
+			content={$i18n.t(
+				'Post-generation n-gram repetition check (approximation). After the response finishes, the output is scanned for repeated word sequences of this length. A warning badge appears if repetition is detected. Note: this is checked client-side after generation — Ollama has no equivalent generation-time constraint. Use repeat_penalty / repeat_last_n to influence generation behaviour.'
+			)}
+			placement="top-start"
+			className="inline-tooltip"
+		>
+			<div class="flex w-full justify-between">
+				<div class=" self-center text-xs flex items-center gap-1">
+					{'no_repeat_ngram_size'}
+					<span class="text-amber-500 dark:text-amber-400 text-[10px] font-medium leading-none"
+						>≈</span
+					>
+				</div>
+				<button
+					class="p-1 px-3 text-xs flex rounded-sm transition shrink-0 outline-hidden"
+					type="button"
+					on:click={() => {
+						params.no_repeat_ngram_size =
+							(params?.no_repeat_ngram_size ?? null) === null ? 3 : null;
+					}}
+				>
+					{#if (params?.no_repeat_ngram_size ?? null) === null}
+						<span class="ml-2 self-center">{$i18n.t('Default')}</span>
+					{:else}
+						<span class="ml-2 self-center">{$i18n.t('Custom')}</span>
+					{/if}
+				</button>
+			</div>
+		</Tooltip>
+
+		{#if (params?.no_repeat_ngram_size ?? null) !== null}
+			<div class="flex mt-0.5 space-x-2">
+				<div class=" flex-1">
+					<input
+						id="steps-range"
+						type="range"
+						min="2"
+						max="10"
+						step="1"
+						bind:value={params.no_repeat_ngram_size}
+						class="w-full h-2 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+					/>
+				</div>
+				<div>
+					<input
+						bind:value={params.no_repeat_ngram_size}
+						type="number"
+						class=" bg-transparent text-center w-14"
+						min="2"
+						max="20"
+						step="1"
 					/>
 				</div>
 			</div>

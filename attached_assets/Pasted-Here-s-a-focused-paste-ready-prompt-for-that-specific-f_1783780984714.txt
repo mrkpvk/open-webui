@@ -1,0 +1,37 @@
+Here's a focused, paste-ready prompt for that specific follow-up task:
+
+---
+
+**Task: Verify and implement full sampling/generation parameter coverage**
+
+Context: the per-message parameter override system (temperature, top_k, top_p, min_p, repeat_penalty, frequency_penalty, presence_penalty, seed, num_predict, stop) is already built and confirmed working against Ollama's `/api/chat` and `/api/generate` `options` object.
+
+Now close the gap on five remaining parameters whose Ollama support is unconfirmed. For each one, do the following in order and don't assume — check the live behavior, not just docs:
+
+1. **Typical-p**
+   - Check `docs.ollama.com` and Ollama's current source/changelog for a `typical_p` key in the `options` object.
+   - If present: send a test request with `typical_p` set to a distinctive value (e.g. 0.3) and confirm output changes vs. default — treat unchanged output as a signal it's silently ignored, not just absent from docs.
+   - If unsupported: check whether the specific model backend exposes it via a raw llama.cpp server flag (`--typical`) as a fallback path, and note that this would require bypassing Ollama's wrapper for that parameter specifically.
+
+2. **No-repeat n-gram size**
+   - Confirm Ollama has no direct equivalent (current understanding: `repeat_last_n` is a different mechanism — penalizes recently-seen tokens rather than hard-blocking exact repeated n-grams).
+   - If no direct support exists, implement a **post-hoc guard**: after generation, detect repeated n-grams of the configured size in the output and either flag it in the UI or automatically retry/truncate at the repeat point. Document this clearly in the UI as an approximation, not true generation-time blocking.
+
+3. **Minimum tokens**
+   - Check if Ollama exposes any min-length equivalent.
+   - If not: implement via EOS logit suppression if Ollama's options allow logit-level intervention (see #5), or as a generation-loop wrapper that ignores an early stop/EOS signal until the minimum token count is reached, then re-requests continuation.
+
+4. **End-of-generation token control**
+   - Confirm whether `stop` sequences are the only lever, or whether Ollama exposes EOS-token-specific control (e.g. an ignore-EOS equivalent to llama.cpp's `--ignore-eos`).
+   - If only `stop` is available, implement EOS control as a specialized case of the min-tokens wrapper above rather than a separate mechanism.
+
+5. **Logit bias**
+   - Check whether Ollama's `/api/chat` and `/api/generate` accept a `logit_bias`-equivalent field, and test it directly (bias a known common token to a large negative value, confirm it disappears from output).
+   - If unsupported in Ollama's wrapper: determine whether the model can be served via a raw llama.cpp server instance instead (Ollama runs on GGUF/llama.cpp under the hood) for cases where the user specifically needs logit bias — this may mean a secondary "advanced" backend mode, not a small tweak.
+
+**Deliverable for this task:**
+- A short written status table: parameter → supported natively / supported via workaround / requires llama.cpp bypass / not feasible.
+- UI for each parameter should only appear enabled if genuinely functional — don't render a slider for something silently ignored by the backend. For workaround-based ones, add a small info icon explaining the approximation (e.g. "approximated via post-generation check" for n-gram blocking).
+- If any parameter requires bypassing Ollama for a raw llama.cpp server connection, implement this as an explicit opt-in "advanced backend" toggle per-chat, not a silent fallback — the user should always know which execution path is being used.
+
+Do not guess capability from documentation alone where documentation is ambiguous or where Ollama's API has changed recently — verify with a live test call against a locally running model before marking anything as supported.

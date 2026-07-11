@@ -61,6 +61,7 @@
 	import MessageParamsPopover from './MessageParamsPopover.svelte';
 	import { fade } from 'svelte/transition';
 	import { flyAndScale } from '$lib/utils/transitions';
+	import { detectNgramRepetition } from '$lib/utils/ngram';
 	import RegenerateMenu from './ResponseMessage/RegenerateMenu.svelte';
 	import StatusHistory from './ResponseMessage/StatusHistory.svelte';
 	import FullHeightIframe from '$lib/components/common/FullHeightIframe.svelte';
@@ -184,6 +185,17 @@
 		!(statusEntries.at(-1)?.hidden ?? false);
 	$: visibleResponseContent =
 		getOutputText(message.output) || removeAllDetails(message.content ?? '');
+
+	// Post-generation n-gram repetition check. Runs client-side when:
+	//   1. The response has finished streaming (message.done === true)
+	//   2. The user configured no_repeat_ngram_size on this message's params override
+	// Ollama has no native equivalent; this is an approximation flagged in the UI.
+	$: ngramRepetitionWarning = (() => {
+		if (!message.done) return null;
+		const n = (message as any)?.paramsOverride?.no_repeat_ngram_size;
+		if (!(n > 1)) return null;
+		return detectNgramRepetition(message.content ?? '', n);
+	})();
 	$: hasResponseContent = Boolean((message.content ?? '').trim() || message.output?.length);
 
 	let edit = false;
@@ -1085,6 +1097,43 @@
 										}}
 									/>
 								</span>
+
+								<!-- N-gram repetition warning (post-generation approximation) -->
+								{#if ngramRepetitionWarning}
+									<Tooltip
+										content={$i18n.t(
+											'Repeated {{ngram}}-gram detected in response: "{{phrase}}". no_repeat_ngram_size is a post-generation check — it flags but cannot prevent repetition during generation. Consider using repeat_penalty or repeat_last_n instead.',
+											{
+												ngram: (message as any)?.paramsOverride?.no_repeat_ngram_size,
+												phrase: ngramRepetitionWarning
+											}
+										)}
+										placement="bottom"
+									>
+										<button
+											type="button"
+											class="{isLastMessage || ($settings?.highContrastMode ?? false)
+												? 'visible'
+												: 'invisible group-hover:visible'} p-1.5 rounded-lg text-amber-500 dark:text-amber-400 hover:bg-black/5 dark:hover:bg-white/5 transition"
+											aria-label={$i18n.t('Repeated n-gram detected')}
+										>
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												fill="none"
+												viewBox="0 0 24 24"
+												stroke-width="2"
+												stroke="currentColor"
+												class="w-4 h-4"
+											>
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+												/>
+											</svg>
+										</button>
+									</Tooltip>
+								{/if}
 
 								{#if !readOnly && ($user?.role === 'admin' || ($user?.permissions?.chat?.tts ?? true))}
 									<Tooltip content={$i18n.t('Read Aloud')} placement="bottom">

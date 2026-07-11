@@ -86,6 +86,13 @@ def remove_open_webui_params(params: dict) -> dict:
         'reasoning_tags': list,
         'compact_token_threshold': int,
         'system': str,
+        # Parameters not supported by Ollama's /api/chat or /api/generate options object.
+        # They are stripped here so Ollama does not log "unrecognized option" warnings.
+        # no_repeat_ngram_size: post-generation repetition check handled client-side.
+        # min_length / ignore_eos: no Ollama equivalent; not feasible via streaming API.
+        'no_repeat_ngram_size': int,
+        'min_length': int,
+        'ignore_eos': bool,
     }
 
     for key in list(params.keys()):
@@ -159,10 +166,15 @@ def apply_model_params_to_body_ollama(params: dict, form_data: dict) -> dict:
             params[value] = params[key]
             del params[key]
 
-    # See https://github.com/ollama/ollama/blob/main/docs/api.md#request-8
+    # See https://github.com/ollama/ollama/blob/main/api/types.go (Options struct)
+    # typical_p: confirmed present in types.go as TypicalP float32 (default 1.0).
+    # tfs_z: present in ollama-js interfaces; passed through for legacy llama.cpp support.
+    # mirostat / mirostat_eta / mirostat_tau: not in current types.go but accepted via
+    #   the options map by the llama.cpp runner; kept for backwards compatibility.
     mappings = {
         'temperature': float,
         'top_p': float,
+        'typical_p': float,
         'seed': lambda x: x,
         'mirostat': int,
         'mirostat_eta': float,
@@ -174,6 +186,7 @@ def apply_model_params_to_body_ollama(params: dict, form_data: dict) -> dict:
         'repeat_last_n': int,
         'top_k': int,
         'min_p': float,
+        'tfs_z': float,
         'repeat_penalty': float,
         'presence_penalty': float,
         'frequency_penalty': float,
