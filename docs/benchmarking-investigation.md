@@ -1,6 +1,6 @@
 # Benchmarking mode: investigation and implementation brief
 
-Investigated 9 November 2026. This document describes a proposed mode; it does not mean a benchmark runner has been implemented or experimentally validated.
+Investigated 9 November 2026. This document preserves the original design proposal. A native CPU benchmark mode was subsequently implemented and tested; see [the implementation and usage guide](benchmarking.md) for delivered behavior and remaining extensions. This research brief includes ideas beyond the current implementation.
 
 ## Recommendation
 

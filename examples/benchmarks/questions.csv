@@ -1,0 +1,3 @@
+id,prompt,expected
+capital,"What is the capital of France? Reply with one word.",Paris
+arithmetic,"What is 2 + 2? Reply with the number only.","""4"""

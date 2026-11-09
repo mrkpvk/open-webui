@@ -116,7 +116,7 @@
 
 	let sharedFolders: any[] = [];
 
-	$: pinnedItems = $settings?.pinnedMenuItems ?? DEFAULT_PINNED_ITEMS;
+	$: pinnedItems = [...new Set([...($settings?.pinnedMenuItems ?? DEFAULT_PINNED_ITEMS), 'benchmarks'])];
 
 	const isMenuItemVisible = (id) => {
 		switch (id) {
@@ -146,6 +146,8 @@
 				);
 			case 'playground':
 				return $user?.role === 'admin';
+			case 'benchmarks':
+				return $user?.role === 'admin' || $user?.role === 'user';
 			default:
 				return false;
 		}
@@ -157,7 +159,8 @@
 			workspace: { label: 'Workspace', href: '/workspace', iconType: 'workspace' },
 			automations: { label: 'Automations', href: '/automations', iconType: 'automations' },
 			calendar: { label: 'Calendar', href: '/calendar', iconType: 'calendar' },
-			playground: { label: 'Playground', href: '/playground', iconType: 'playground' }
+			playground: { label: 'Playground', href: '/playground', iconType: 'playground' },
+			benchmarks: { label: 'Benchmarks', href: '/benchmarks', iconType: 'playground' }
 		};
 		return items[id];
 	};
@@ -965,7 +968,7 @@
 													d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
 												/>
 											</svg>
-										{:else if itemId === 'playground'}
+										{:else if itemId === 'playground' || itemId === 'benchmarks'}
 											<Code className="size-4.5" />
 										{/if}
 									</div>
@@ -1214,7 +1217,7 @@
 														d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
 													/>
 												</svg>
-											{:else if itemId === 'playground'}
+											{:else if itemId === 'playground' || itemId === 'benchmarks'}
 												<Code className="size-4.5" strokeWidth="2" />
 											{/if}
 										</div>

@@ -4,7 +4,7 @@ Reviewed 9 November 2026, starting from local fork head `57c440271`. The review 
 
 The useful custom additions are the raw-context editor, per-message parameter controls, expanded sampling options and repetition diagnostics. Their main quality issues were inconsistent handling between layers and missing regression coverage. The inherited app also has substantial type-check debt. These changes repair concrete behavior and add checks that future upstream integrations must retain.
 
-Pre-existing local edits to `.npmrc`, `backend/.gitignore`, `backend/start_windows.bat` and `package.json`, and the local pnpm files, were preserved. The existing secret file was not read, rotated or committed. Changes from this review remain in the working tree; no commit, push, live user-data migration or wholesale upstream upgrade was performed.
+Pre-existing local edits to `.npmrc`, `backend/.gitignore`, `backend/start_windows.bat` and `package.json`, and the local pnpm files, were preserved. The existing secret file was not read, rotated or committed. At the end of this initial review the changes were uncommitted. On the user's subsequent instruction, they were committed and published as checkpoint `527250fa9283e29056ab63aadb082eb066525312` on the fork's [pre-benchmark backup branch](https://github.com/mrkpvk/open-webui/tree/backup/pre-benchmarks-2026-11-09). No live user-data migration or wholesale upstream upgrade was performed.
 
 ## Repairs
 
@@ -74,4 +74,17 @@ The production build check invokes Vite directly using already-prepared Pyodide 
 
 The active Monday/Thursday maintenance task and the protected behaviors are described in [upstream-maintenance.md](upstream-maintenance.md). A 3,397-commit upstream gap warrants selected fixes and staged upgrades with behavioral checks, rather than replacing custom files.
 
-[benchmarking-investigation.md](benchmarking-investigation.md) compares Promptfoo, LangSmith, Inspect AI and the LM Evaluation Harness, then specifies a separate Benchmarks workspace with datasets, saved configurations, ordering, repeats, automatic scoring, durable progress and exports. It distinguishes answer correctness, answer agreement and exact output identity. For directed reachability, use a conventional graph oracle instead of an LLM judge. This is a research/design deliverable; the benchmark runner has not been implemented in this review.
+[benchmarking-investigation.md](benchmarking-investigation.md) records the initial research. The subsequent requested implementation is described in [benchmarking.md](benchmarking.md).
+
+## Benchmark implementation validation
+
+The user subsequently requested implementation and publication to their fork with a saved rollback version. Both the original fork and the tested review checkpoint were saved as remote backup branches before the feature was added.
+
+- **66 regression tests passed:** 47 Python tests and 19 frontend tests. New coverage checks scheduling, strict scoring, zero seeds, CPU option validation, dataset imports, owner isolation, preset-policy preservation, lease contention, cancellation/retry history, expired-worker recovery, reasoning variability and accuracy denominators.
+- **Production Vite build passed**, including the new route and sidebar link. The full type check remains at the existing baseline of **9,521 errors / 282 warnings**; the new benchmark page, client and dataset utilities produced no diagnostics.
+- Real authenticated CPU experiments verified an eight-trial configuration comparison and JSON/CSV exports, a 20-trial cancellation/resume experiment, and a 40-trial restart experiment. The restart interrupted an active worker; 37 completed outputs were preserved and the remaining trials resumed after lease recovery. No duplicated completed attempts were introduced.
+- Cross-account read/export returned 404, unauthenticated read returned 401, a GPU override returned 422, and competing start returned 409.
+- Browser testing saved and started the built-in directed-graph dataset with `gemma3:1b`, one configuration and two repeats. All six requests finished without transport errors; the oracle scored **33.3% accuracy**, with **100% answer agreement and raw-output identity**. These are validation observations for a tiny fixture, not a model-quality estimate. The screenshot in `docs/assets/benchmarks.png` shows the results.
+- The benchmark API evidence and restart evidence are saved locally under the ignored `.codex-runtime-check` directory. All testing used isolated app data and synthetic accounts. The temporary servers are stopped after validation.
+
+The current limits and deferred features are documented in the benchmarking guide. No new runtime dependencies or chat-database migrations were added by this feature.

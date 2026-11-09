@@ -139,6 +139,7 @@ from open_webui.routers import (
     analytics,
     audio,
     auths,
+    benchmarks,
     automations,
     calendar,
     channels,
@@ -306,6 +307,7 @@ async def lifespan(app: FastAPI):
     # Store reference to main event loop for sync->async calls (e.g., embedding generation)
     # This allows sync functions to schedule work on the main loop without blocking health checks
     app.state.main_loop = asyncio.get_running_loop()
+    benchmarks.initialize(app)
 
     app.state.instance_id = INSTANCE_ID
     start_logger()
@@ -413,6 +415,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
+    await benchmarks.shutdown(app)
     await publish_event(app, EVENTS.SYSTEM_SHUTDOWN_STARTED, source='system')
 
     # Shutdown: clean up shared resources
@@ -762,6 +765,7 @@ app.include_router(groups.router, prefix='/api/v1/groups', tags=['groups'])
 app.include_router(files.router, prefix='/api/v1/files', tags=['files'])
 app.include_router(functions.router, prefix='/api/v1/functions', tags=['functions'])
 app.include_router(evaluations.router, prefix='/api/v1/evaluations', tags=['evaluations'])
+app.include_router(benchmarks.router, prefix='/api/v1/benchmarks', tags=['benchmarks'])
 if ENABLE_ADMIN_ANALYTICS:
     app.include_router(analytics.router, prefix='/api/v1/analytics', tags=['analytics'])
 app.include_router(utils.router, prefix='/api/v1/utils', tags=['utils'])

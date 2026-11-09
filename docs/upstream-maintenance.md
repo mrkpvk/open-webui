@@ -22,6 +22,7 @@ The latest 100 upstream commits inspected on 9 November span 7 November 15:26 to
 3. Per-message generation controls affect the intended request, persist across regeneration/continuation, and preview the effective merge of chat and message settings.
 4. N-gram diagnostics are post-generation warnings, not decoding enforcement. Frontend-only diagnostics must not be sent as unsupported Ollama options.
 5. Existing secrets, settings, user data and unfinished work stay intact. Do not read or include secret files in patches or reports.
+6. Preserve the separate `/benchmarks` mode, frozen manifests, owner-scoped checkpoints, CPU enforcement, pinned model/backend identity, exact scoring and cancellation/recovery behavior. Run the benchmark regressions with every relevant integration. Benchmark storage remains separate from chat storage.
 
 CPU support is one feature among these requirements. Repeated identical output is a measured result under a recorded runtime/model/setup; no universal determinism claim follows from CPU use.
 
@@ -41,4 +42,4 @@ Record candidate upstream SHAs, chosen/deferred changes, reasons, exact validati
 
 9 November 2026: reviewed [upstream fix 842cd1f](https://github.com/open-webui/open-webui/commit/842cd1fa95894cde28d8d732357004b0d2b60119) and ported its `command -v ollama` build guard into this fork's Dockerfile. This makes the bundled-Ollama build fail when installation produces no executable. The change is in the working tree; it is not a full upstream merge or a published release. No Docker image build has yet validated it. The recent tool-call serialization fix `227287b3` targets a helper absent from this older fork, so it was not blindly transplanted.
 
-The local quality fixes and their validation are documented in [project-review.md](project-review.md). The benchmark mode remains an investigation/design proposal in [benchmarking-investigation.md](benchmarking-investigation.md).
+The quality fixes and benchmark implementation validation are documented in [project-review.md](project-review.md). The implemented mode is covered in [benchmarking.md](benchmarking.md); the original research/design brief remains in [benchmarking-investigation.md](benchmarking-investigation.md). The tested pre-benchmark checkpoint was published at `527250fa9283e29056ab63aadb082eb066525312` on `backup/pre-benchmarks-2026-11-09`, and the original fork head is preserved on `backup/pre-review-2026-11-09`.

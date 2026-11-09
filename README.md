@@ -1,6 +1,23 @@
 # Open WebUI 👋
 
-Fork notes: [code review and validation](docs/project-review.md), [upstream maintenance](docs/upstream-maintenance.md), and [benchmarking mode investigation](docs/benchmarking-investigation.md).
+## About this research fork
+
+This is [mrkpvk's fork](https://github.com/mrkpvk/open-webui) of [Open WebUI](https://github.com/open-webui/open-webui), with tools for controlled local LLM experiments alongside ordinary chat.
+
+- **Benchmarks mode:** import JSON, JSONL or CSV question sets; compare named parameter configurations or a parameter grid; choose ordering, seeds and repeats; score answers automatically; inspect and export every trial.
+- **CPU inference:** benchmark requests use zero GPU layers, one pinned Ollama connection and a saved model digest. Each successful trial records CPU telemetry. Repeatability is measured for the recorded setup.
+- **Prompt inspection:** edit a raw conversation path while preserving original branches and message metadata.
+- **Message controls:** override generation settings per message, with explicit zero values preserved and optional repetition diagnostics.
+
+Open **Benchmarks** in the sidebar after launching the app normally. Start with the built-in graph example, or use the [example datasets](examples/benchmarks). The [benchmarking guide](docs/benchmarking.md) covers configuration, scoring, cancellation/resume and reproducibility.
+
+![CPU benchmark results showing correctness and repeatability separately](docs/assets/benchmarks.png)
+
+**Rollback is saved on GitHub:** [the tested pre-benchmark version](https://github.com/mrkpvk/open-webui/tree/backup/pre-benchmarks-2026-11-09) and [the original fork version](https://github.com/mrkpvk/open-webui/tree/backup/pre-review-2026-11-09). Benchmark records live in a separate database; switching back does not require a chat-database migration.
+
+Project notes: [review and validation](docs/project-review.md), [upstream maintenance](docs/upstream-maintenance.md), and [benchmarking research](docs/benchmarking-investigation.md). The full project type check still has existing failures; targeted regression tests and production-build checks are tracked in the validation notes.
+
+The upstream overview and installation documentation follow below. Open WebUI's branding, credits and license notices are retained.
 
 ![GitHub stars](https://img.shields.io/github/stars/open-webui/open-webui?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/open-webui/open-webui?style=social)

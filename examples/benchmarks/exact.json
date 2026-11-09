@@ -1,0 +1,4 @@
+[
+  {"id":"capital","prompt":"What is the capital of France? Reply with one word.","expected":"Paris"},
+  {"id":"arithmetic","prompt":"What is 2 + 2? Reply with the number only.","expected":"4"}
+]
