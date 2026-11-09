@@ -26,6 +26,7 @@
 
 	export let className = 'h-full flex pt-8';
 
+	export let chatParams: Record<string, any> = {};
 	export let chatId = '';
 	export let user = $_user;
 
@@ -527,6 +528,7 @@
 						{#each messages as message, messageIdx (message.id)}
 							<Message
 								{chatId}
+								{chatParams}
 								bind:history
 								{selectedModels}
 								messageId={message.id}

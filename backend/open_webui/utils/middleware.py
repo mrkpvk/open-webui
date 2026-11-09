@@ -110,7 +110,12 @@ from open_webui.utils.misc import (
     set_last_user_message_content,
     strip_empty_content_blocks,
 )
-from open_webui.utils.payload import apply_system_prompt_to_body, resolve_system_prompt
+from open_webui.utils.payload import (
+    apply_model_params_to_body_ollama,
+    apply_system_prompt_to_body,
+    remove_open_webui_params,
+    resolve_system_prompt,
+)
 from open_webui.utils.plugin import load_function_module_by_id
 from open_webui.utils.response import merge_usage, normalize_usage
 from open_webui.utils.sanitize import sanitize_code
@@ -1871,20 +1876,11 @@ async def chat_completion_files_handler(
 
 def apply_params_to_form_data(form_data, model):
     params = form_data.pop('params', {})
+    if model.get('owned_by') == 'ollama':
+        return apply_model_params_to_body_ollama(params, form_data)
+
+    params = copy.deepcopy(params)
     custom_params = params.pop('custom_params', {})
-
-    open_webui_params = {
-        'stream_response': bool,
-        'stream_delta_chunk_size': int,
-        'function_calling': str,
-        'reasoning_tags': list,
-        'compact_token_threshold': int,
-        'system': str,
-    }
-
-    for key in list(params.keys()):
-        if key in open_webui_params:
-            del params[key]
 
     if custom_params:
         # Attempt to parse custom_params if they are strings
@@ -1900,23 +1896,21 @@ def apply_params_to_form_data(form_data, model):
         # If custom_params are provided, merge them into params
         params = deep_update(params, custom_params)
 
-    if model.get('owned_by') == 'ollama':
-        # Ollama specific parameters
-        form_data['options'] = params
-    else:
-        if isinstance(params, dict):
-            for key, value in params.items():
-                if value is not None:
-                    form_data[key] = value
+    params = remove_open_webui_params(params)
 
-        if 'logit_bias' in params and params['logit_bias'] is not None:
-            try:
-                logit_bias = convert_logit_bias_input_to_json(params['logit_bias'])
+    if isinstance(params, dict):
+        for key, value in params.items():
+            if value is not None:
+                form_data[key] = value
 
-                if logit_bias:
-                    form_data['logit_bias'] = json.loads(logit_bias)
-            except Exception as e:
-                log.exception(f'Error parsing logit_bias: {e}')
+    if 'logit_bias' in params and params['logit_bias'] is not None:
+        try:
+            logit_bias = convert_logit_bias_input_to_json(params['logit_bias'])
+
+            if logit_bias:
+                form_data['logit_bias'] = json.loads(logit_bias)
+        except Exception as e:
+            log.exception(f'Error parsing logit_bias: {e}')
 
     return form_data
 

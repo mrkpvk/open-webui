@@ -11,13 +11,15 @@
 	import MultiResponseMessages from './MultiResponseMessages.svelte';
 	import ResponseMessage from './ResponseMessage.svelte';
 	import UserMessage from './UserMessage.svelte';
+	import type { ContextHistory } from '$lib/utils/rawContext';
 
+	export let chatParams: Record<string, any> = {};
 	export let chatId;
 	export let selectedModels = [];
 	export let idx = 0;
 
-	export let history;
-	export let messageId;
+	export let history: ContextHistory;
+	export let messageId: string;
 
 	export let user;
 
@@ -56,6 +58,7 @@
 			<UserMessage
 				{user}
 				{chatId}
+				{chatParams}
 				{history}
 				{messageId}
 				isFirstMessage={idx === 0}
@@ -77,11 +80,16 @@
 		{:else if (history.messages[history.messages[messageId].parentId]?.models?.length ?? 1) === 1}
 			<ResponseMessage
 				{chatId}
+				{chatParams}
 				{history}
 				{messageId}
 				{selectedModels}
 				isLastMessage={messageId === history.currentId}
-				siblings={history.messages[history.messages[messageId].parentId]?.childrenIds ?? []}
+				siblings={history.messages[messageId].parentId !== null
+					? (history.messages[history.messages[messageId].parentId]?.childrenIds ?? [])
+					: Object.values(history.messages)
+							.filter((message) => message.parentId === null)
+							.map((message) => message.id)}
 				{setInputText}
 				{gotoMessage}
 				{showPreviousMessage}
@@ -105,6 +113,7 @@
 				<MultiResponseMessages
 					bind:history
 					{chatId}
+					{chatParams}
 					{messageId}
 					{selectedModels}
 					isLastMessage={messageId === history?.currentId}

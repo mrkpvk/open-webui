@@ -1112,6 +1112,9 @@ async def chat_completion(
             message_ids = [{'model_id': model_id, 'message_id': form_data.pop('id', None)}]
 
         user_message = form_data.pop('user_message', None) or form_data.pop('parent_message', None)
+        assistant_params_override = form_data.pop('assistant_params_override', None)
+        if assistant_params_override is not None and not isinstance(assistant_params_override, dict):
+            raise HTTPException(status_code=400, detail='assistant_params_override must be an object')
 
         # Drop tool_servers if caller lacks features.direct_tool_servers —
         # mirrors the storage-side strip in user/settings/update.
@@ -1134,6 +1137,7 @@ async def chat_completion(
             'user_message': user_message,
             'user_message_id': user_message.get('id') if user_message else None,
             'assistant_message_id': form_data.pop('assistant_message_id', None),
+            'assistant_params_override': assistant_params_override,
             'session_id': form_data.pop('session_id', None),
             'folder_id': form_data.pop('folder_id', None),
             'filter_ids': form_data.pop('filter_ids', []),
@@ -1233,6 +1237,7 @@ async def chat_completion(
                                 'done': False,
                                 'model': target_model_id,
                                 'timestamp': int(time.time()),
+                                **({'paramsOverride': assistant_params_override} if assistant_params_override else {}),
                             }
 
                     await Chats.insert_new_chat(
@@ -1444,6 +1449,11 @@ async def chat_completion(
                                     'done': False,
                                     'model': target_model_id,
                                     'timestamp': int(time.time()),
+                                    **(
+                                        {'paramsOverride': assistant_params_override}
+                                        if assistant_params_override
+                                        else {}
+                                    ),
                                 },
                             )
                             await publish_event(

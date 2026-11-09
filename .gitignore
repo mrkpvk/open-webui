@@ -311,3 +311,6 @@ cypress/videos
 cypress/screenshots
 .vscode/settings.json
 .cptr
+
+# Isolated local validation data, server logs and temporary credentials
+.codex-runtime-check/

@@ -1,0 +1,41 @@
+name: Fork regressions
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies without browser downloads
+        run: npm ci --ignore-scripts
+      - name: Protect custom conversation and parameter behavior
+        run: npm run test:fork
+
+  backend:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install isolated regression dependencies
+        run: python -m pip install pytest==8.4.2 typer uvicorn==0.41.0 aiohttp==3.13.5 python-mimeparse==2.0.0
+      - name: Protect CPU options and provider conversion
+        run: python -m pytest backend/tests -q

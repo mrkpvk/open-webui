@@ -1,6 +1,8 @@
 <script lang="ts">
-	import { getContext, tick } from 'svelte';
-	import { settings } from '$lib/stores';
+	import { getContext } from 'svelte';
+	import { settings, user } from '$lib/stores';
+	import equal from 'fast-deep-equal';
+	import { normalizeStopTokens, resolveMessageParams } from '$lib/utils/messageParams';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import AdvancedParams from '$lib/components/chat/Settings/Advanced/AdvancedParams.svelte';
 
@@ -10,12 +12,14 @@
 	export let message: Record<string, any> = {};
 	// Chat-level param defaults (the 'params' variable in Chat.svelte)
 	export let chatParams: Record<string, any> = {};
+	export let parentParams: Record<string, any> = {};
 	// Callback: called with the new paramsOverride object (or null to clear)
 	export let onSave: (params: Record<string, any> | null) => void = () => {};
 
 	let show = false;
 	let showPreview = false;
 	let panelEl: HTMLDivElement;
+	let triggerEl: HTMLButtonElement;
 
 	// Local editable copy — starts as the existing override (or empty = all null = use defaults)
 	let localParams: Record<string, any> = {};
@@ -25,23 +29,20 @@
 
 	// Effective = global settings merged with chat-level params merged with this message's overrides
 	// (only non-null override values participate)
-	$: effectiveParams = Object.fromEntries(
-		Object.entries({
-			...($settings?.params ?? {}),
-			...chatParams,
-			...Object.fromEntries(Object.entries(localParams).filter(([, v]) => v !== null))
-		}).filter(([, v]) => v !== null && v !== undefined)
-	);
+	let effectiveParams: Record<string, any> = {};
+	$: {
+		effectiveParams = resolveMessageParams($settings?.params, chatParams, parentParams, localParams);
+		effectiveParams.stop = normalizeStopTokens(effectiveParams.stop);
+	}
 
 	// Whether any override is actually set on this message
-	$: hasOverride =
-		message?.paramsOverride && Object.values(message.paramsOverride).some((v) => v !== null);
+	$: hasOverride = Object.keys(resolveMessageParams(message?.paramsOverride)).length > 0;
 
 	const handleParamChange = (newParams: Record<string, any>) => {
 		localParams = newParams;
-		const overrides = Object.fromEntries(
-			Object.entries(newParams).filter(([, v]) => v !== null && v !== undefined)
-		);
+		const overrides = resolveMessageParams(newParams);
+		// AdvancedParams reports its initial value on mount as well as edits.
+		if (equal(overrides, resolveMessageParams(message?.paramsOverride))) return;
 		onSave(Object.keys(overrides).length > 0 ? overrides : null);
 	};
 
@@ -51,19 +52,23 @@
 	};
 
 	const handleClickOutside = (e: MouseEvent) => {
-		if (show && panelEl && !panelEl.contains(e.target as Node)) {
+		if (show && panelEl && !panelEl.contains(e.target as Node) && !triggerEl?.contains(e.target as Node)) {
 			show = false;
 		}
 	};
 </script>
 
-<svelte:window on:mousedown={handleClickOutside} />
+<svelte:window on:mousedown={handleClickOutside} on:keydown={(event) => {
+	if (event.key === 'Escape') show = false;
+}} />
 
 <!-- Trigger button -->
 <Tooltip content={$i18n.t('Message Parameters')} placement="bottom">
 	<button
+		bind:this={triggerEl}
 		type="button"
 		aria-label={$i18n.t('Message Parameters')}
+		aria-expanded={show}
 		class="invisible group-hover:visible p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-lg dark:hover:text-white hover:text-black transition relative"
 		class:!visible={show || hasOverride}
 		class:text-blue-500={hasOverride}
@@ -137,7 +142,9 @@
 		<!-- Hint -->
 		<div class="px-3 pt-2 pb-1 text-[10px] text-gray-400 dark:text-gray-500">
 			{$i18n.t(
-				'Overrides apply only to the next generation that uses this message as context. Null values fall back to global defaults.'
+				message.role === 'assistant'
+					? 'Overrides apply when regenerating or continuing this response. Default values inherit the user message and chat settings.'
+					: 'Overrides apply when generating or regenerating a response to this message. Default values inherit the chat settings.'
 			)}
 		</div>
 
@@ -145,6 +152,7 @@
 		<div class="px-3 pb-2 max-h-72 overflow-y-auto">
 			<AdvancedParams
 				params={localParams}
+				admin={$user?.role === 'admin'}
 				onChange={handleParamChange}
 			/>
 		</div>
@@ -173,7 +181,7 @@
 				<div class="px-3 pb-3">
 					<p class="text-[10px] text-gray-400 dark:text-gray-500 mb-1">
 						{$i18n.t(
-							'Effective params for the next request from this message (global defaults → chat params → this override):'
+							'Chat request parameters after merging global defaults, chat settings, user message and response overrides. Model defaults and backend rules may also apply:'
 						)}
 					</p>
 					<pre

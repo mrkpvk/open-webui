@@ -86,13 +86,8 @@ def remove_open_webui_params(params: dict) -> dict:
         'reasoning_tags': list,
         'compact_token_threshold': int,
         'system': str,
-        # Parameters not supported by Ollama's /api/chat or /api/generate options object.
-        # They are stripped here so Ollama does not log "unrecognized option" warnings.
-        # no_repeat_ngram_size: post-generation repetition check handled client-side.
-        # min_length / ignore_eos: no Ollama equivalent; not feasible via streaming API.
+        # This is a client-side diagnostic, not a decoding parameter.
         'no_repeat_ngram_size': int,
-        'min_length': int,
-        'ignore_eos': bool,
     }
 
     for key in list(params.keys()):
@@ -104,7 +99,7 @@ def remove_open_webui_params(params: dict) -> dict:
 
 # inplace function: form_data is modified
 def apply_model_params_to_body_openai(params: dict, form_data: dict) -> dict:
-    params = remove_open_webui_params(params)
+    params = copy.deepcopy(params)
 
     custom_params = params.pop('custom_params', {})
     if custom_params:
@@ -120,6 +115,8 @@ def apply_model_params_to_body_openai(params: dict, form_data: dict) -> dict:
 
         # If there are custom parameters, we need to apply them first
         params = deep_update(params, custom_params)
+
+    params = remove_open_webui_params(params)
 
     mappings = {
         'temperature': float,
@@ -138,7 +135,8 @@ def apply_model_params_to_body_openai(params: dict, form_data: dict) -> dict:
 
 
 def apply_model_params_to_body_ollama(params: dict, form_data: dict) -> dict:
-    params = remove_open_webui_params(params)
+    # Settings may be reused across models or repetitions; never consume them.
+    params = copy.deepcopy(params)
 
     custom_params = params.pop('custom_params', {})
     if custom_params:
@@ -155,6 +153,11 @@ def apply_model_params_to_body_ollama(params: dict, form_data: dict) -> dict:
         # If there are custom parameters, we need to apply them first
         params = deep_update(params, custom_params)
 
+    params = remove_open_webui_params(params)
+    # These belong to other providers. Do not pass them to Ollama as options.
+    for key in ('min_length', 'ignore_eos', 'logit_bias'):
+        params.pop(key, None)
+
     # Convert OpenAI parameter names to Ollama parameter names if needed.
     name_differences = {
         'max_tokens': 'num_predict',
@@ -167,15 +170,13 @@ def apply_model_params_to_body_ollama(params: dict, form_data: dict) -> dict:
             del params[key]
 
     # See https://github.com/ollama/ollama/blob/main/api/types.go (Options struct)
-    # typical_p: confirmed present in types.go as TypicalP float32 (default 1.0).
-    # tfs_z: present in ollama-js interfaces; passed through for legacy llama.cpp support.
-    # mirostat / mirostat_eta / mirostat_tau: not in current types.go but accepted via
-    #   the options map by the llama.cpp runner; kept for backwards compatibility.
+    # Legacy fields (tfs_z / mirostat) remain available for older servers.
+    # Sending an option does not establish that a particular Ollama version supports it.
     mappings = {
         'temperature': float,
         'top_p': float,
         'typical_p': float,
-        'seed': lambda x: x,
+        'seed': int,
         'mirostat': int,
         'mirostat_eta': float,
         'mirostat_tau': float,
@@ -321,17 +322,24 @@ def convert_payload_openai_to_ollama(openai_payload: dict) -> dict:
     ollama_payload['model'] = openai_payload.get('model')
     ollama_payload['messages'] = convert_messages_openai_to_ollama(openai_payload.get('messages'))
     ollama_payload['stream'] = openai_payload.get('stream', False)
+    for key in ('format', 'keep_alive', 'think'):
+        if key in openai_payload:
+            ollama_payload[key] = openai_payload[key]
     if 'tools' in openai_payload:
         ollama_payload['tools'] = openai_payload['tools']
 
     if 'max_tokens' in openai_payload:
-        ollama_payload['num_predict'] = openai_payload['max_tokens']
+        ollama_payload['options'] = {'num_predict': openai_payload['max_tokens']}
         del openai_payload['max_tokens']
 
     # If there are advanced parameters in the payload, format them in Ollama's options field
     if openai_payload.get('options'):
-        ollama_payload['options'] = openai_payload['options']
-        ollama_options = openai_payload['options']
+        ollama_options = {
+            **ollama_payload.get('options', {}),
+            **remove_open_webui_params(openai_payload['options']),
+        }
+        for key in ('min_length', 'ignore_eos', 'logit_bias'):
+            ollama_options.pop(key, None)
 
         def parse_json(value: str) -> dict:
             """

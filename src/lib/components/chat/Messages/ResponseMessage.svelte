@@ -62,6 +62,7 @@
 	import { fade } from 'svelte/transition';
 	import { flyAndScale } from '$lib/utils/transitions';
 	import { detectNgramRepetition } from '$lib/utils/ngram';
+	import { resolveMessageParams } from '$lib/utils/messageParams';
 	import RegenerateMenu from './ResponseMessage/RegenerateMenu.svelte';
 	import StatusHistory from './ResponseMessage/StatusHistory.svelte';
 	import FullHeightIframe from '$lib/components/common/FullHeightIframe.svelte';
@@ -76,6 +77,9 @@
 		files?: { type: string; url: string }[];
 		timestamp: number;
 		role: string;
+		parentId?: string;
+		paramsOverride?: Record<string, any>;
+		feedbackId?: string;
 		statusHistory?: {
 			done: boolean;
 			action: string;
@@ -120,12 +124,15 @@
 		annotation?: { type: string; rating: number };
 	}
 
+	export let chatParams: Record<string, any> = {};
 	export let chatId = '';
 	export let history;
 	export let messageId;
 	export let selectedModels = [];
 
 	let message: MessageType = structuredClone(history.messages[messageId]);
+	let parentMessage: Record<string, any> | undefined;
+	$: parentMessage = message.parentId ? history.messages[message.parentId] : undefined;
 	$: if (history.messages) {
 		const source = history.messages[messageId];
 		if (source) {
@@ -186,16 +193,16 @@
 	$: visibleResponseContent =
 		getOutputText(message.output) || removeAllDetails(message.content ?? '');
 
-	// Post-generation n-gram repetition check. Runs client-side when:
-	//   1. The response has finished streaming (message.done === true)
-	//   2. The user configured no_repeat_ngram_size on this message's params override
-	// Ollama has no native equivalent; this is an approximation flagged in the UI.
-	$: ngramRepetitionWarning = (() => {
-		if (!message.done) return null;
-		const n = (message as any)?.paramsOverride?.no_repeat_ngram_size;
-		if (!(n > 1)) return null;
-		return detectNgramRepetition(message.content ?? '', n);
-	})();
+	// This is an opt-in text check, not a generation-time constraint.
+	$: repetitionParams = resolveMessageParams(
+		$settings?.params,
+		chatParams,
+		parentMessage?.paramsOverride,
+		message.paramsOverride
+	);
+	$: ngramRepetitionWarning = message.done
+		? detectNgramRepetition(visibleResponseContent, repetitionParams.no_repeat_ngram_size)
+		: null;
 	$: hasResponseContent = Boolean((message.content ?? '').trim() || message.output?.length);
 
 	let edit = false;
@@ -483,11 +490,11 @@
 			data: {
 				...(updatedMessage?.annotation ? updatedMessage.annotation : {}),
 				model_id: message?.selectedModelId ?? message.model,
-				...(history.messages[message.parentId].childrenIds.length > 1
+				...((parentMessage?.childrenIds?.length ?? 0) > 1
 					? {
-							sibling_model_ids: history.messages[message.parentId].childrenIds
-								.filter((id) => id !== message.id)
-								.map((id) => history.messages[id]?.selectedModelId ?? history.messages[id].model)
+							sibling_model_ids: (parentMessage?.childrenIds ?? [])
+								.filter((id: string) => id !== message.id)
+								.map((id: string) => history.messages[id]?.selectedModelId ?? history.messages[id].model)
 						}
 					: {})
 			},
@@ -555,7 +562,7 @@
 				);
 				console.log(tags);
 
-				if (tags) {
+				if (tags && updatedMessage.feedbackId) {
 					updatedMessage.annotation.tags = tags;
 					feedbackItem.data.tags = tags;
 
@@ -1083,10 +1090,12 @@
 								</Tooltip>
 
 								<!-- Per-message parameter override -->
+								{#if !readOnly}
 								<span class="relative inline-block">
 									<MessageParamsPopover
 										{message}
-										chatParams={{}}
+										{chatParams}
+										parentParams={parentMessage?.paramsOverride ?? {}}
 										onSave={(newOverride) => {
 											if (newOverride) {
 												saveMessage(messageId, { ...history.messages[messageId], paramsOverride: newOverride });
@@ -1097,6 +1106,7 @@
 										}}
 									/>
 								</span>
+								{/if}
 
 								<!-- N-gram repetition warning (post-generation approximation) -->
 								{#if ngramRepetitionWarning}
@@ -1104,7 +1114,7 @@
 										content={$i18n.t(
 											'Repeated {{ngram}}-gram detected in response: "{{phrase}}". no_repeat_ngram_size is a post-generation check — it flags but cannot prevent repetition during generation. Consider using repeat_penalty or repeat_last_n instead.',
 											{
-												ngram: (message as any)?.paramsOverride?.no_repeat_ngram_size,
+												ngram: repetitionParams.no_repeat_ngram_size,
 												phrase: ngramRepetitionWarning
 											}
 										)}

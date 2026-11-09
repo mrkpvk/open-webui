@@ -23,6 +23,7 @@
 	const i18n = getContext('i18n');
 	dayjs.extend(localizedFormat);
 
+	export let chatParams: Record<string, any> = {};
 	export let chatId;
 	export let history;
 	export let messageId;
@@ -296,6 +297,7 @@
 							{#if message}
 								<ResponseMessage
 									{chatId}
+									{chatParams}
 									{history}
 									messageId={message?.id}
 									{selectedModels}
@@ -352,6 +354,7 @@
 								{#if message}
 									<ResponseMessage
 										{chatId}
+										{chatParams}
 										{history}
 										messageId={_messageId}
 										{selectedModels}

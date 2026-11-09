@@ -18,16 +18,17 @@
  * @returns     The repeated n-gram string, or null.
  */
 export function detectNgramRepetition(text: string, n: number): string | null {
-	if (n < 2 || !text) return null;
+	if (!Number.isInteger(n) || n < 2 || !text) return null;
 
 	// Tokenise on whitespace; strip punctuation so "hello," and "hello" are the same token.
 	const words = text
 		.toLowerCase()
-		.replace(/[^\w\s]/g, ' ')
+		.replace(/[^\p{L}\p{N}\s]/gu, ' ')
 		.split(/\s+/)
 		.filter(Boolean);
 
-	if (words.length < n * 2) return null;
+	// Repeats may overlap ("a a a" repeats the bigram "a a").
+	if (words.length <= n) return null;
 
 	const seen = new Set<string>();
 	for (let i = 0; i <= words.length - n; i++) {

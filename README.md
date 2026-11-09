@@ -1,5 +1,7 @@
 # Open WebUI 👋
 
+Fork notes: [code review and validation](docs/project-review.md), [upstream maintenance](docs/upstream-maintenance.md), and [benchmarking mode investigation](docs/benchmarking-investigation.md).
+
 ![GitHub stars](https://img.shields.io/github/stars/open-webui/open-webui?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/open-webui/open-webui?style=social)
 ![GitHub watchers](https://img.shields.io/github/watchers/open-webui/open-webui?style=social)

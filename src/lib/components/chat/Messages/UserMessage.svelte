@@ -25,6 +25,7 @@
 
 	export let user;
 
+	export let chatParams: Record<string, any> = {};
 	export let chatId;
 	export let history;
 	export let messageId;
@@ -553,10 +554,11 @@
 					{/if}
 
 					<!-- Per-message parameter override -->
+					{#if !readOnly}
 					<span class="relative inline-block">
 						<MessageParamsPopover
 							{message}
-							chatParams={{}}
+							{chatParams}
 							onSave={(newOverride) => {
 								if (newOverride) {
 									saveMessage(messageId, { ...history.messages[messageId], paramsOverride: newOverride });
@@ -567,6 +569,7 @@
 							}}
 						/>
 					</span>
+					{/if}
 
 					{#if $_user?.role === 'admin' || ($_user?.permissions?.chat?.delete_message ?? false)}
 						{#if !readOnly && (!isFirstMessage || siblings.length > 1)}

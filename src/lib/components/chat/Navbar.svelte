@@ -59,6 +59,7 @@
 	export let moveChatHandler: (id: string, folderId: string) => void;
 
 	export let showRawEditor = false;
+	export let rawEditorDisabled = false;
 	export let onToggleRawEditor: () => void = () => {};
 
 	let closedBannerIds = [];
@@ -235,11 +236,12 @@
 						</Menu>
 					{/if}
 
-					{#if chat?.id && !$temporaryChatEnabled}
+					{#if chat?.id && !$temporaryChatEnabled && !readOnly}
 						<Tooltip content={showRawEditor ? $i18n.t('Exit Raw Editor') : $i18n.t('Raw Context Editor')}>
 							<button
 								class="flex cursor-pointer px-2 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-850 transition {showRawEditor ? 'text-blue-500 dark:text-blue-400' : ''}"
 								on:click={onToggleRawEditor}
+								disabled={rawEditorDisabled}
 								aria-label={$i18n.t('Toggle Raw Context Editor')}
 							>
 								<div class="m-auto self-center">

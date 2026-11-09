@@ -105,6 +105,7 @@
 	import MessageInput from '$lib/components/chat/MessageInput.svelte';
 	import Messages from '$lib/components/chat/Messages.svelte';
 	import RawContextEditor from '$lib/components/chat/RawContextEditor.svelte';
+	import { normalizeStopTokens, resolveMessageParams } from '$lib/utils/messageParams';
 	import Navbar from '$lib/components/chat/Navbar.svelte';
 	import ChatControls from './ChatControls.svelte';
 	import EventConfirmDialog from '../common/ConfirmDialog.svelte';
@@ -2261,12 +2262,14 @@
 			messages = null,
 			modelId = null,
 			modelIdx = null,
-			regenerationPrompt = null
+			regenerationPrompt = null,
+			paramsOverride = null
 		}: {
 			messages?: any[] | null;
 			modelId?: string | null;
 			modelIdx?: number | null;
 			regenerationPrompt?: string | null;
+			paramsOverride?: Record<string, any> | null;
 		} = {}
 	) => {
 		if (autoScroll) {
@@ -2299,6 +2302,7 @@
 					childrenIds: [],
 					role: 'assistant',
 					content: '',
+					...(paramsOverride ? { paramsOverride: structuredClone(paramsOverride) } : {}),
 					done: false,
 					model: model.id,
 					modelName: model.name ?? model.id,
@@ -2417,17 +2421,6 @@
 		return features;
 	};
 
-	const getStopTokens = () => {
-		const stop = params?.stop ?? $settings?.params?.stop;
-		if (!stop) return undefined;
-
-		const tokens = Array.isArray(stop) ? stop : stop.split(',').map((s) => s.trim());
-
-		return tokens
-			.filter(Boolean)
-			.map((token) => decodeURIComponent(JSON.parse(`"${token.replace(/"/g, '\\"')}"`)));
-	};
-
 	const sendMessageSocket = async (
 		model,
 		_messages,
@@ -2446,6 +2439,13 @@
 	) => {
 		const responseMessage = _history.messages[responseMessageId];
 		const userMessage = _history.messages[responseMessage.parentId];
+		const resolvedParams = resolveMessageParams(
+			$settings?.params,
+			params,
+			userMessage?.paramsOverride,
+			responseMessage?.paramsOverride
+		);
+		resolvedParams.stop = normalizeStopTokens(resolvedParams.stop);
 
 		const chatMessageFiles = _messages
 			.filter((message) => message.files)
@@ -2488,8 +2488,7 @@
 
 		const stream =
 			model?.info?.params?.stream_response ??
-			$settings?.params?.stream_response ??
-			params?.stream_response ??
+			resolvedParams.stream_response ??
 			true;
 		// Always include system prompt — backend extracts it and prepends to DB messages.
 		// Only temp chats need conversation messages (persisted chats load from DB).
@@ -2582,12 +2581,7 @@
 				stream: stream,
 				model: model.id,
 				...(messages.length > 0 ? { messages } : {}),
-				params: {
-					...$settings?.params,
-					...params,
-					...(userMessage?.paramsOverride ?? {}),
-					stop: (userMessage?.paramsOverride?.stop ?? getStopTokens())
-				},
+				params: resolvedParams,
 
 				files: (files?.length ?? 0) > 0 ? files : undefined,
 
@@ -2620,6 +2614,7 @@
 				...(messageIdsList ? { message_ids: messageIdsList } : {}),
 				parent_id: userMessage?.parentId ?? null,
 				user_message: userMessage,
+				assistant_params_override: responseMessage?.paramsOverride,
 				...(regenerationPrompt ? { regeneration_prompt: regenerationPrompt } : {}),
 				...(continueResponse ? { assistant_message_id: responseMessageId } : {}),
 
@@ -2846,6 +2841,7 @@
 			}
 
 			await sendMessage(history, userMessage.id, {
+				paramsOverride: message.paramsOverride ?? null,
 				...(suggestionPrompt
 					? {
 							messages: createMessagesList(history, message.id),
@@ -3214,7 +3210,10 @@
 						bind:this={navbarElement}
 						{readOnly}
 						{showRawEditor}
-						onToggleRawEditor={() => { showRawEditor = !showRawEditor; }}
+						onToggleRawEditor={() => {
+							if (!readOnly && !generating && !taskIds?.length) showRawEditor = !showRawEditor;
+						}}
+						rawEditorDisabled={generating || Boolean(taskIds?.length)}
 						chat={{
 							id: $chatId,
 							chat: {
@@ -3288,20 +3287,24 @@
 								}}
 							>
 								<div class=" h-full w-full flex flex-col">
-									{#if showRawEditor && $chatId}
+									{#if showRawEditor && $chatId && !readOnly}
 										<RawContextEditor
 											{history}
 											chatId={$chatId}
 											onApply={async (newHistory) => {
-												history = newHistory;
-												await saveChatHandler($chatId, history);
-												showRawEditor = false;
+												const editedChatId = $chatId;
+												await saveChatHandler(editedChatId, newHistory);
+												if ($chatId === editedChatId) {
+													history = newHistory;
+													showRawEditor = false;
+												}
 											}}
 											onClose={() => { showRawEditor = false; }}
 										/>
 									{:else}
 										<Messages
 											bind:this={messagesRef}
+											chatParams={params}
 											chatId={$chatId}
 											{readOnly}
 											bind:history
@@ -3334,7 +3337,7 @@
 										{$i18n.t('Read only')}
 									</div>
 								</div>
-							{:else}
+							{:else if !showRawEditor}
 								<div class=" pb-2 {dragged ? 'z-0' : 'z-10'}">
 									<MessageInput
 										bind:this={messageInput}

@@ -1,14 +1,17 @@
 <script lang="ts">
-	import { getContext, tick } from 'svelte';
+	import { getContext } from 'svelte';
+	import type { Writable } from 'svelte/store';
+	import type { i18n as I18n } from 'i18next';
+	import { applyContextPath, editableContextPath, type EditableContextMessage } from '$lib/utils/rawContext';
 	import { toast } from 'svelte-sonner';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 
-	const i18n = getContext('i18n');
+	const i18n = getContext<Writable<I18n>>('i18n');
 
 	export let history: { currentId: string | null; messages: Record<string, any> };
 	export let chatId: string;
 	// Called with updated history after Apply — parent saves it
-	export let onApply: (newHistory: typeof history) => void = () => {};
+	export let onApply: (newHistory: typeof history) => void | Promise<void> = () => {};
 	// Called when user cancels/closes without saving
 	export let onClose: () => void = () => {};
 
@@ -16,39 +19,10 @@
 	const ROLES = ['user', 'assistant', 'system'] as const;
 	type Role = (typeof ROLES)[number];
 
-	interface EditableMessage {
-		id: string; // temp id for list tracking (not committed to history until Apply)
-		role: Role;
-		content: string;
-	}
+	type EditableMessage = EditableContextMessage;
 
-	// Build the linear path from history.currentId back to root
-	function buildLinearPath(h: typeof history): EditableMessage[] {
-		const result: EditableMessage[] = [];
-		if (!h.currentId) return result;
-
-		// Walk up from root: find root first, then walk down the current path
-		const getPath = (id: string | null): string[] => {
-			if (!id) return [];
-			const msg = h.messages[id];
-			if (!msg) return [];
-			return [...getPath(msg.parentId), id];
-		};
-
-		const path = getPath(h.currentId);
-		for (const id of path) {
-			const msg = h.messages[id];
-			if (!msg) continue;
-			result.push({
-				id: crypto.randomUUID(),
-				role: (msg.role as Role) || 'user',
-				content: typeof msg.content === 'string' ? msg.content : ''
-			});
-		}
-		return result;
-	}
-
-	let editableMessages: EditableMessage[] = buildLinearPath(history);
+	let editableMessages: EditableMessage[] = editableContextPath(history);
+	let saving = false;
 
 	// Paste transcript mode
 	let showPasteModal = false;
@@ -102,33 +76,15 @@
 			return;
 		}
 
-		// Build a fresh linear chain
-		const newMessages: Record<string, any> = {};
-		const ids: string[] = editableMessages.map(() => crypto.randomUUID());
-
-		for (let i = 0; i < editableMessages.length; i++) {
-			const em = editableMessages[i];
-			const id = ids[i];
-			const parentId = i === 0 ? null : ids[i - 1];
-			const childrenIds = i < editableMessages.length - 1 ? [ids[i + 1]] : [];
-
-			newMessages[id] = {
-				id,
-				parentId,
-				childrenIds,
-				role: em.role,
-				content: em.content,
-				timestamp: Math.floor(Date.now() / 1000),
-				models: []
-			};
+		if (saving) return;
+		saving = true;
+		try {
+			await onApply(applyContextPath(history, editableMessages));
+		} catch (error) {
+			toast.error($i18n.t('Could not save context changes'));
+		} finally {
+			saving = false;
 		}
-
-		const newHistory = {
-			currentId: ids[ids.length - 1],
-			messages: newMessages
-		};
-
-		onApply(newHistory);
 	};
 
 	// Parse pasted transcript
@@ -247,6 +203,7 @@
 				type="button"
 				class="text-xs px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium transition"
 				on:click={applyChanges}
+				disabled={saving}
 			>
 				{$i18n.t('Apply')}
 			</button>
@@ -409,7 +366,7 @@
 		class="shrink-0 px-4 py-2 border-t border-gray-200 dark:border-gray-700 text-[10px] text-gray-400 dark:text-gray-500"
 	>
 		{$i18n.t(
-			'Click role badge to cycle (U=user, A=assistant, S=system). Apply replaces the current message path — other branches are preserved.'
+			'Click role badge to cycle (U=user, A=assistant, S=system). Apply saves the edited path as a new branch. Original messages and other branches are preserved.'
 		)}
 	</div>
 </div>

@@ -1,9 +1,12 @@
 # Ollama Sampling Parameter Support Status
 
-Verified against Ollama `api/types.go` (Options struct) as of July 2025.
-See: https://github.com/ollama/ollama/blob/main/api/types.go
+Review update, 9 November 2026: the historical implementation notes below are not a compatibility guarantee. The installed Ollama 0.32.1 [Options/Runner source](https://github.com/ollama/ollama/blob/v0.32.1/api/types.go) includes `typical_p`, `num_gpu`, `num_thread`, `num_batch` and `num_ctx`; it does not list `tfs_z` or the `mirostat` family. These legacy controls remain in this fork for older backends, but their presence in the UI or outgoing options does not prove the server honors them. The [current main source](https://github.com/ollama/ollama/blob/main/api/types.go) marks `typical_p` deprecated as a model parameter while still accepting it per request with a warning. Check the exact installed server version for experiments.
 
-## Already confirmed working (in Ollama `Options` struct or accepted by llama.cpp runner)
+Standard chat and direct model-option paths now share normalization. Frontend-only `no_repeat_ngram_size` is stripped after custom-parameter merging; Ollama-only stripping of `min_length`, `ignore_eos` and `logit_bias` no longer removes those options from other compatible providers. Explicit `num_gpu: 0`, `seed: 0`, `temperature: 0`, and `think: false` survive conversion. See [review and validation](project-review.md) for test coverage and CPU runtime evidence.
+
+The remaining notes record the original July 2025 investigation and should be read with these corrections.
+
+## Original supported-options inventory
 
 | Parameter | Ollama field | Notes |
 |---|---|---|
@@ -39,7 +42,7 @@ Default value is `1.0` (disabled). Values below 1.0 apply locally-typical sampli
 
 **Status: ⚠️ Not supported by Ollama — post-generation client-side approximation**
 
-Ollama's `Options` struct has no `no_repeat_ngram_size` field. The underlying llama.cpp also does not expose this as a sampling parameter (it is a Hugging Face Transformers beam-search feature).
+Ollama's `Options` struct has no `no_repeat_ngram_size` field. This fork implements a word-level text diagnostic after generation, not the token-level decoding constraint in Hugging Face Transformers.
 
 `repeat_last_n` is a different mechanism: it penalises recently-seen *tokens* by adjusting their logit score; it does not hard-block exact n-gram sequences.
 
@@ -86,6 +89,6 @@ Using a raw llama.cpp server instance would allow logit bias via `/completion` e
 
 ## tfs_z (tail-free sampling)
 
-**Bonus finding:** `tfs_z` is present in the UI `defaultParams` and in the `ollama-js` interfaces but was missing from Open WebUI's Ollama `payload.py` mappings, meaning it was silently dropped before reaching Ollama.
+**Historical finding:** `tfs_z` was present in the UI `defaultParams` and in older `ollama-js` interfaces but missing from Open WebUI's Ollama `payload.py` mappings. Passing it through fixes that omission for compatible older servers; it does not establish support in Ollama 0.32.1.
 
 **Action taken:** Added `'tfs_z': float` to the Ollama mappings in `payload.py`.
