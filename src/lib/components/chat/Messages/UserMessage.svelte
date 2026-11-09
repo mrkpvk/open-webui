@@ -555,20 +555,23 @@
 
 					<!-- Per-message parameter override -->
 					{#if !readOnly}
-					<span class="relative inline-block">
-						<MessageParamsPopover
-							{message}
-							{chatParams}
-							onSave={(newOverride) => {
-								if (newOverride) {
-									saveMessage(messageId, { ...history.messages[messageId], paramsOverride: newOverride });
-								} else {
-									const { paramsOverride: _po, ...rest } = history.messages[messageId];
-									saveMessage(messageId, rest);
-								}
-							}}
-						/>
-					</span>
+						<span class="relative inline-block">
+							<MessageParamsPopover
+								{message}
+								{chatParams}
+								onSave={(newOverride) => {
+									if (newOverride) {
+										saveMessage(messageId, {
+											...history.messages[messageId],
+											paramsOverride: newOverride
+										});
+									} else {
+										const { paramsOverride: _po, ...rest } = history.messages[messageId];
+										saveMessage(messageId, rest);
+									}
+								}}
+							/>
+						</span>
 					{/if}
 
 					{#if $_user?.role === 'admin' || ($_user?.permissions?.chat?.delete_message ?? false)}

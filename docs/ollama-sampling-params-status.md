@@ -8,19 +8,19 @@ The remaining notes record the original July 2025 investigation and should be re
 
 ## Original supported-options inventory
 
-| Parameter | Ollama field | Notes |
-|---|---|---|
-| `temperature` | `temperature` | ✅ Native |
-| `top_p` | `top_p` | ✅ Native |
-| `top_k` | `top_k` | ✅ Native |
-| `min_p` | `min_p` | ✅ Native |
-| `repeat_penalty` | `repeat_penalty` | ✅ Native |
-| `frequency_penalty` | `frequency_penalty` | ✅ Native |
-| `presence_penalty` | `presence_penalty` | ✅ Native |
-| `seed` | `seed` | ✅ Native |
-| `num_predict` (`max_tokens`) | `num_predict` | ✅ Native |
-| `stop` | `stop` | ✅ Native |
-| `repeat_last_n` | `repeat_last_n` | ✅ Native |
+| Parameter                    | Ollama field        | Notes     |
+| ---------------------------- | ------------------- | --------- |
+| `temperature`                | `temperature`       | ✅ Native |
+| `top_p`                      | `top_p`             | ✅ Native |
+| `top_k`                      | `top_k`             | ✅ Native |
+| `min_p`                      | `min_p`             | ✅ Native |
+| `repeat_penalty`             | `repeat_penalty`    | ✅ Native |
+| `frequency_penalty`          | `frequency_penalty` | ✅ Native |
+| `presence_penalty`           | `presence_penalty`  | ✅ Native |
+| `seed`                       | `seed`              | ✅ Native |
+| `num_predict` (`max_tokens`) | `num_predict`       | ✅ Native |
+| `stop`                       | `stop`              | ✅ Native |
+| `repeat_last_n`              | `repeat_last_n`     | ✅ Native |
 
 ## Five parameters investigated
 
@@ -29,9 +29,11 @@ The remaining notes record the original July 2025 investigation and should be re
 **Status: ✅ Natively supported by Ollama**
 
 Confirmed in `api/types.go`:
+
 ```go
 TypicalP float32 `json:"typical_p,omitempty"`
 ```
+
 Default value is `1.0` (disabled). Values below 1.0 apply locally-typical sampling.
 
 **Action taken:** Added `typical_p: float` to the Ollama mappings in `payload.py` and added a UI slider (0.0–1.0) in `AdvancedParams.svelte` labeled `typical_p (Ollama)`.
@@ -44,9 +46,10 @@ Default value is `1.0` (disabled). Values below 1.0 apply locally-typical sampli
 
 Ollama's `Options` struct has no `no_repeat_ngram_size` field. This fork implements a word-level text diagnostic after generation, not the token-level decoding constraint in Hugging Face Transformers.
 
-`repeat_last_n` is a different mechanism: it penalises recently-seen *tokens* by adjusting their logit score; it does not hard-block exact n-gram sequences.
+`repeat_last_n` is a different mechanism: it penalises recently-seen _tokens_ by adjusting their logit score; it does not hard-block exact n-gram sequences.
 
 **Action taken:**
+
 - Parameter is stripped from the Ollama options payload (added to `open_webui_params` in `payload.py`).
 - UI control added in `AdvancedParams.svelte` with an info tooltip explaining this is a post-generation check.
 - Client-side `detectNgramRepetition()` in `src/lib/utils/ngram.ts` runs on the completed response. A warning badge appears on the message when a repeated n-gram is detected.

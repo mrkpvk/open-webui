@@ -18,8 +18,12 @@ JSON is an array of questions or an object containing a `questions` array. JSONL
 
 ```json
 [
-  {"id": "capital", "prompt": "What is the capital of France? Reply with one word.", "expected": "Paris"},
-  {"id": "arithmetic", "prompt": "What is 2 + 2? Reply with the number only.", "expected": "4"}
+	{
+		"id": "capital",
+		"prompt": "What is the capital of France? Reply with one word.",
+		"expected": "Paris"
+	},
+	{ "id": "arithmetic", "prompt": "What is 2 + 2? Reply with the number only.", "expected": "4" }
 ]
 ```
 
@@ -27,17 +31,29 @@ Use strings for exact scoring. CSV expected values are parsed as JSON when possi
 
 ## Scorers
 
-| Scorer | Behavior |
-| --- | --- |
-| Exact text | Compares the full response after trimming outer whitespace. Case sensitivity is configurable. An incorrect string is a valid but wrong answer. |
-| Boolean | Requires a single `true`, `false`, `yes`, `no`, `1` or `0` token, ignoring case and outer whitespace. Explanations or conflicting answers are invalid. |
-| JSON field | Parses the entire response as strict JSON and compares the selected dotted field path, including array indices such as `results.0.answer`. Booleans are distinct from numbers. Code fences and missing fields are invalid. |
+| Scorer         | Behavior                                                                                                                                                                                                                                                            |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Exact text     | Compares the full response after trimming outer whitespace. Case sensitivity is configurable. An incorrect string is a valid but wrong answer.                                                                                                                      |
+| Boolean        | Requires a single `true`, `false`, `yes`, `no`, `1` or `0` token, ignoring case and outer whitespace. Explanations or conflicting answers are invalid.                                                                                                              |
+| JSON field     | Parses the entire response as strict JSON and compares the selected dotted field path, including array indices such as `results.0.answer`. Booleans are distinct from numbers. Code fences and missing fields are invalid.                                          |
 | Directed graph | Computes ground truth with a conventional directed reachability search from `question.graph`. Requires a boolean-style model answer. A source node is reachable from itself by a zero-edge path. A supplied `expected` label is superseded by computed graph truth. |
 
 Graph questions include this structure:
 
 ```json
-{"id":"path","prompt":"Directed edges: A -> B, B -> C. Is C reachable from A? Answer only true or false.","graph":{"nodes":["A","B","C"],"edges":[["A","B"],["B","C"]],"source":"A","target":"C"}}
+{
+	"id": "path",
+	"prompt": "Directed edges: A -> B, B -> C. Is C reachable from A? Answer only true or false.",
+	"graph": {
+		"nodes": ["A", "B", "C"],
+		"edges": [
+			["A", "B"],
+			["B", "C"]
+		],
+		"source": "A",
+		"target": "C"
+	}
+}
 ```
 
 No uploaded scoring code or model judge is executed. The scorer version is recorded. Results preserve the raw response, parsed answer, expected answer and parsing error.

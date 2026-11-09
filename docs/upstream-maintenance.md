@@ -23,6 +23,7 @@ The latest 100 upstream commits inspected on 9 November span 7 November 15:26 to
 4. N-gram diagnostics are post-generation warnings, not decoding enforcement. Frontend-only diagnostics must not be sent as unsupported Ollama options.
 5. Existing secrets, settings, user data and unfinished work stay intact. Do not read or include secret files in patches or reports.
 6. Preserve the separate `/benchmarks` mode, frozen manifests, owner-scoped checkpoints, CPU enforcement, pinned model/backend identity, exact scoring and cancellation/recovery behavior. Run the benchmark regressions with every relevant integration. Benchmark storage remains separate from chat storage.
+7. Preserve public, integrity-verified npm tarball URLs and the fork's opt-in release guards. Ordinary maintenance pushes must not automatically publish packages/images or notify upstream projects.
 
 CPU support is one feature among these requirements. Repeated identical output is a measured result under a recorded runtime/model/setup; no universal determinism claim follows from CPU use.
 

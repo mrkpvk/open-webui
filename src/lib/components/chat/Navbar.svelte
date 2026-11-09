@@ -237,16 +237,31 @@
 					{/if}
 
 					{#if chat?.id && !$temporaryChatEnabled && !readOnly}
-						<Tooltip content={showRawEditor ? $i18n.t('Exit Raw Editor') : $i18n.t('Raw Context Editor')}>
+						<Tooltip
+							content={showRawEditor ? $i18n.t('Exit Raw Editor') : $i18n.t('Raw Context Editor')}
+						>
 							<button
-								class="flex cursor-pointer px-2 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-850 transition {showRawEditor ? 'text-blue-500 dark:text-blue-400' : ''}"
+								class="flex cursor-pointer px-2 py-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-850 transition {showRawEditor
+									? 'text-blue-500 dark:text-blue-400'
+									: ''}"
 								on:click={onToggleRawEditor}
 								disabled={rawEditorDisabled}
 								aria-label={$i18n.t('Toggle Raw Context Editor')}
 							>
 								<div class="m-auto self-center">
-									<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-5">
-										<path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										fill="none"
+										viewBox="0 0 24 24"
+										stroke-width="1.5"
+										stroke="currentColor"
+										class="size-5"
+									>
+										<path
+											stroke-linecap="round"
+											stroke-linejoin="round"
+											d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"
+										/>
 									</svg>
 								</div>
 							</button>

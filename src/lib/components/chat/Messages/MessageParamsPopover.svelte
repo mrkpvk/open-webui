@@ -31,7 +31,12 @@
 	// (only non-null override values participate)
 	let effectiveParams: Record<string, any> = {};
 	$: {
-		effectiveParams = resolveMessageParams($settings?.params, chatParams, parentParams, localParams);
+		effectiveParams = resolveMessageParams(
+			$settings?.params,
+			chatParams,
+			parentParams,
+			localParams
+		);
 		effectiveParams.stop = normalizeStopTokens(effectiveParams.stop);
 	}
 
@@ -52,15 +57,23 @@
 	};
 
 	const handleClickOutside = (e: MouseEvent) => {
-		if (show && panelEl && !panelEl.contains(e.target as Node) && !triggerEl?.contains(e.target as Node)) {
+		if (
+			show &&
+			panelEl &&
+			!panelEl.contains(e.target as Node) &&
+			!triggerEl?.contains(e.target as Node)
+		) {
 			show = false;
 		}
 	};
 </script>
 
-<svelte:window on:mousedown={handleClickOutside} on:keydown={(event) => {
-	if (event.key === 'Escape') show = false;
-}} />
+<svelte:window
+	on:mousedown={handleClickOutside}
+	on:keydown={(event) => {
+		if (event.key === 'Escape') show = false;
+	}}
+/>
 
 <!-- Trigger button -->
 <Tooltip content={$i18n.t('Message Parameters')} placement="bottom">
@@ -185,8 +198,11 @@
 						)}
 					</p>
 					<pre
-						class="text-[10px] bg-gray-50 dark:bg-gray-900 rounded p-2 overflow-auto max-h-40 text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-all"
-					>{JSON.stringify(Object.keys(effectiveParams).length > 0 ? effectiveParams : { note: 'all defaults' }, null, 2)}</pre>
+						class="text-[10px] bg-gray-50 dark:bg-gray-900 rounded p-2 overflow-auto max-h-40 text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-all">{JSON.stringify(
+							Object.keys(effectiveParams).length > 0 ? effectiveParams : { note: 'all defaults' },
+							null,
+							2
+						)}</pre>
 				</div>
 			{/if}
 		</div>

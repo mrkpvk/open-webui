@@ -116,7 +116,9 @@
 
 	let sharedFolders: any[] = [];
 
-	$: pinnedItems = [...new Set([...($settings?.pinnedMenuItems ?? DEFAULT_PINNED_ITEMS), 'benchmarks'])];
+	$: pinnedItems = [
+		...new Set([...($settings?.pinnedMenuItems ?? DEFAULT_PINNED_ITEMS), 'benchmarks'])
+	];
 
 	const isMenuItemVisible = (id) => {
 		switch (id) {

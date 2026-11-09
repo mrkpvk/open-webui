@@ -5,6 +5,7 @@
 name: Release
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
 
@@ -15,6 +16,7 @@ concurrency:
 jobs:
   # ── Create release and trigger downstream workflows ──────────────────────
   publish:
+    if: ${{ github.repository == 'open-webui/open-webui' || (github.event_name == 'workflow_dispatch' && vars.ENABLE_FORK_RELEASES == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:

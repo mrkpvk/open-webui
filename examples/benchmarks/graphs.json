@@ -1,5 +1,35 @@
 [
-  {"id":"path","prompt":"Directed edges: A -> B, B -> C. Is C reachable from A? Answer only true or false.","graph":{"nodes":["A","B","C"],"edges":[["A","B"],["B","C"]],"source":"A","target":"C"},"metadata":{"graph_id":"chain","encoding_id":"edge-list"}},
-  {"id":"reverse","prompt":"Directed edges: A -> B, B -> C. Is A reachable from C? Answer only true or false.","graph":{"nodes":["A","B","C"],"edges":[["A","B"],["B","C"]],"source":"C","target":"A"},"metadata":{"graph_id":"chain","encoding_id":"edge-list"}},
-  {"id":"self","prompt":"Nodes: A and B. Directed edge: A -> B. Is A reachable from A, allowing a path of length zero? Answer only true or false.","graph":{"nodes":["A","B"],"edges":[["A","B"]],"source":"A","target":"A"}}
+	{
+		"id": "path",
+		"prompt": "Directed edges: A -> B, B -> C. Is C reachable from A? Answer only true or false.",
+		"graph": {
+			"nodes": ["A", "B", "C"],
+			"edges": [
+				["A", "B"],
+				["B", "C"]
+			],
+			"source": "A",
+			"target": "C"
+		},
+		"metadata": { "graph_id": "chain", "encoding_id": "edge-list" }
+	},
+	{
+		"id": "reverse",
+		"prompt": "Directed edges: A -> B, B -> C. Is A reachable from C? Answer only true or false.",
+		"graph": {
+			"nodes": ["A", "B", "C"],
+			"edges": [
+				["A", "B"],
+				["B", "C"]
+			],
+			"source": "C",
+			"target": "A"
+		},
+		"metadata": { "graph_id": "chain", "encoding_id": "edge-list" }
+	},
+	{
+		"id": "self",
+		"prompt": "Nodes: A and B. Directed edge: A -> B. Is A reachable from A, allowing a path of length zero? Answer only true or false.",
+		"graph": { "nodes": ["A", "B"], "edges": [["A", "B"]], "source": "A", "target": "A" }
+	}
 ]

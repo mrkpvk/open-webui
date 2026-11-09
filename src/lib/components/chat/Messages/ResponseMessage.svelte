@@ -494,7 +494,10 @@
 					? {
 							sibling_model_ids: (parentMessage?.childrenIds ?? [])
 								.filter((id: string) => id !== message.id)
-								.map((id: string) => history.messages[id]?.selectedModelId ?? history.messages[id].model)
+								.map(
+									(id: string) =>
+										history.messages[id]?.selectedModelId ?? history.messages[id].model
+								)
 						}
 					: {})
 			},
@@ -1091,21 +1094,24 @@
 
 								<!-- Per-message parameter override -->
 								{#if !readOnly}
-								<span class="relative inline-block">
-									<MessageParamsPopover
-										{message}
-										{chatParams}
-										parentParams={parentMessage?.paramsOverride ?? {}}
-										onSave={(newOverride) => {
-											if (newOverride) {
-												saveMessage(messageId, { ...history.messages[messageId], paramsOverride: newOverride });
-											} else {
-												const { paramsOverride: _po, ...rest } = history.messages[messageId];
-												saveMessage(messageId, rest);
-											}
-										}}
-									/>
-								</span>
+									<span class="relative inline-block">
+										<MessageParamsPopover
+											{message}
+											{chatParams}
+											parentParams={parentMessage?.paramsOverride ?? {}}
+											onSave={(newOverride) => {
+												if (newOverride) {
+													saveMessage(messageId, {
+														...history.messages[messageId],
+														paramsOverride: newOverride
+													});
+												} else {
+													const { paramsOverride: _po, ...rest } = history.messages[messageId];
+													saveMessage(messageId, rest);
+												}
+											}}
+										/>
+									</span>
 								{/if}
 
 								<!-- N-gram repetition warning (post-generation approximation) -->

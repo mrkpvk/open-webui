@@ -2,7 +2,11 @@
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
 	import type { i18n as I18n } from 'i18next';
-	import { applyContextPath, editableContextPath, type EditableContextMessage } from '$lib/utils/rawContext';
+	import {
+		applyContextPath,
+		editableContextPath,
+		type EditableContextMessage
+	} from '$lib/utils/rawContext';
 	import { toast } from 'svelte-sonner';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 
@@ -106,7 +110,8 @@
 			if (match) {
 				if (current) parsed.push(current);
 				const roleName = match[1].toLowerCase() as Role;
-				const role: Role = roleName === 'assistant' ? 'assistant' : roleName === 'system' ? 'system' : 'user';
+				const role: Role =
+					roleName === 'assistant' ? 'assistant' : roleName === 'system' ? 'system' : 'user';
 				current = {
 					id: crypto.randomUUID(),
 					role,
@@ -119,7 +124,11 @@
 		if (current) parsed.push(current);
 
 		if (parsed.length === 0) {
-			toast.error($i18n.t('Could not parse any messages. Use "User: ...", "Assistant: ...", or "System: ..." prefixes.'));
+			toast.error(
+				$i18n.t(
+					'Could not parse any messages. Use "User: ...", "Assistant: ...", or "System: ..." prefixes.'
+				)
+			);
 			return;
 		}
 
@@ -223,10 +232,15 @@
 		{#each editableMessages as msg, idx (msg.id)}
 			<div class="flex gap-2 group/row items-start">
 				<!-- Role badge (click to cycle) -->
-				<Tooltip content={$i18n.t('Click to cycle role: user → assistant → system')} placement="right">
+				<Tooltip
+					content={$i18n.t('Click to cycle role: user → assistant → system')}
+					placement="right"
+				>
 					<button
 						type="button"
-						class="mt-1.5 shrink-0 w-7 h-7 rounded-md text-xs font-bold flex items-center justify-center {roleColor(msg.role)} transition hover:opacity-80"
+						class="mt-1.5 shrink-0 w-7 h-7 rounded-md text-xs font-bold flex items-center justify-center {roleColor(
+							msg.role
+						)} transition hover:opacity-80"
 						on:click={() => cycleRole(idx)}
 					>
 						{roleLabel(msg.role)}
@@ -237,7 +251,11 @@
 				<textarea
 					class="flex-1 min-h-[60px] resize-y rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-800 dark:text-gray-100 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-600 transition font-mono"
 					bind:value={msg.content}
-					placeholder="{msg.role === 'system' ? $i18n.t('System instruction…') : msg.role === 'assistant' ? $i18n.t('Assistant response…') : $i18n.t('User message…')}"
+					placeholder={msg.role === 'system'
+						? $i18n.t('System instruction…')
+						: msg.role === 'assistant'
+							? $i18n.t('Assistant response…')
+							: $i18n.t('User message…')}
 				/>
 
 				<!-- Row actions (visible on hover) -->
@@ -413,8 +431,7 @@
 					)}
 				</p>
 				<pre
-					class="text-[10px] bg-gray-50 dark:bg-gray-800 rounded p-2 text-gray-500 dark:text-gray-400 mb-2 whitespace-pre"
-				>User: Hello, how are you?
+					class="text-[10px] bg-gray-50 dark:bg-gray-800 rounded p-2 text-gray-500 dark:text-gray-400 mb-2 whitespace-pre">User: Hello, how are you?
 Assistant: I'm doing well, thanks!
     How can I help you today?
 System: You are a helpful assistant.</pre>

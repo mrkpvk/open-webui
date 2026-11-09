@@ -2486,10 +2486,7 @@
 			});
 		}
 
-		const stream =
-			model?.info?.params?.stream_response ??
-			resolvedParams.stream_response ??
-			true;
+		const stream = model?.info?.params?.stream_response ?? resolvedParams.stream_response ?? true;
 		// Always include system prompt — backend extracts it and prepends to DB messages.
 		// Only temp chats need conversation messages (persisted chats load from DB).
 		let messages: any[] = [
@@ -3299,7 +3296,9 @@
 													showRawEditor = false;
 												}
 											}}
-											onClose={() => { showRawEditor = false; }}
+											onClose={() => {
+												showRawEditor = false;
+											}}
 										/>
 									{:else}
 										<Messages
