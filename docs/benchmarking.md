@@ -98,4 +98,4 @@ git fetch origin
 git switch -c rollback/pre-benchmarks origin/backup/pre-benchmarks-2026-11-09
 ```
 
-Commit or otherwise preserve unfinished work before switching. To roll back the fork's default branch, revert the benchmark feature commit and push the revert; no force push is needed. Older code ignores the separate benchmark database. Keep it for later recovery.
+Commit or otherwise preserve unfinished work before switching. To roll back the fork's default branch, make a new commit restoring the backup version, or revert subsequent integration commits followed by the benchmark feature commit. No force push is needed. Older code ignores the separate benchmark database. Keep it for later recovery.

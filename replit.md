@@ -11,6 +11,7 @@ A feature-rich, self-hosted AI chat platform that supports Ollama, OpenAI-compat
 ## Running the app
 
 The workflow `Start application` runs:
+
 ```bash
 source .venv/bin/activate && bash backend/start.sh
 ```
@@ -18,6 +19,7 @@ source .venv/bin/activate && bash backend/start.sh
 This starts the uvicorn server on port 8080. The frontend must be built first (`npm run build`) — the FastAPI backend serves the built SvelteKit output as static files.
 
 For development with a live frontend:
+
 ```bash
 npm run dev   # starts Vite dev server on port 5173
 ```

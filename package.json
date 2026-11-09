@@ -19,7 +19,7 @@
 		"i18n:parse": "i18next --config i18next-parser.config.ts && prettier --write \"src/lib/i18n/**/*.{js,json}\"",
 		"cy:open": "cypress open",
 		"test:frontend": "vitest --passWithNoTests",
-		"test:fork": "node node_modules/vitest/vitest.mjs run --config vitest.fork.config.ts",
+		"test:fork": "svelte-kit sync && node node_modules/vitest/vitest.mjs run --config vitest.fork.config.ts",
 		"pyodide:fetch": "node scripts/prepare-pyodide.js"
 	},
 	"devDependencies": {

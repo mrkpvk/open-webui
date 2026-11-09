@@ -93,4 +93,6 @@ The current limits and deferred features are documented in the benchmarking guid
 
 Publishing the feature exposed nine npm tarball URLs pointing to an inaccessible Replit-only mirror. Each package's version and integrity hash was verified against the public npm registry before replacing only its download URL. No dependency version changed in this repair. The GitHub backend regression jobs passed on both Windows and Linux; frontend installation initially failed on the private mirror URL.
 
+The fresh-checkout frontend check also exposed missing generated Svelte configuration. `test:fork` now runs `svelte-kit sync` first. Generated locale catalogs were synchronized for the existing custom chat controls, using the app's established empty-string fallback behavior; no translated content was invented. Formatting excludes historical agent notes and local validation scratch data.
+
 Inherited release workflows also ran automatically on pushes to the fork. Publishing jobs now retain upstream behavior while requiring an explicit manual dispatch and `ENABLE_FORK_RELEASES=true` for fork releases. Upstream Helm/Docker Hub notifications remain upstream-only. The two automatically queued Docker publication runs were cancelled. Routine pushes run validation without publishing packages or images.
