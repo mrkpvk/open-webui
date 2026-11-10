@@ -19,6 +19,12 @@
 		graphBenchmarkSample
 	} from '$lib/utils/benchmarkDataset';
 
+	interface RepeatMetrics {
+		rate?: number;
+		answer_agreement?: number;
+		groups_with_repeats?: number;
+	}
+
 	let models: BenchmarkModel[] = [];
 	let runs: BenchmarkRun[] = [];
 	let selected: BenchmarkRun | null = null;
@@ -71,8 +77,7 @@
 	})();
 	$: summary = selected?.summary;
 	$: progress = selected?.total_trials ? selected.completed_trials / selected.total_trials : 0;
-	$: repeatMetrics = summary?.consistency as
-		{ rate?: number; answer_agreement?: number; groups_with_repeats?: number } | undefined;
+	$: repeatMetrics = summary?.consistency as RepeatMetrics | undefined;
 	$: configMetrics = (summary?.by_configuration ?? []) as {
 		id: string;
 		name: string;
