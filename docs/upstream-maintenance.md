@@ -80,3 +80,13 @@ Selected the spinner fix [01aae7268de156d440897a1d2a654252091f4d1f](https://gith
 All 23 frontend and 47 backend fork regressions passed. The scoped patch affects browser presentation only. Production build and integration evidence are retained in the local `.codex-runtime-check/upstream-maintenance-2026-11-23.json` record.
 
 Deferred the separate shimmer stylesheet changes and the math clipboard fix for browser compatibility checks. The context-usage optimisation targets an absent helper. The Chroma diagnostics and Qdrant connection changes need separate retrieval checks. The next stable checkpoint remains `0666e59d26a4d056e0bacee41742486badd71cf8`. The monthly schedule review remains due 9 December.
+
+## 26 November 2026 maintenance
+
+Upstream released [v0.13.5](https://github.com/open-webui/open-webui/releases/tag/v0.13.5) at `926f826eaef6179c092a936eede6c7363e425975`. Reviewed the release notes and titles of 358 commits since `0666e59d26a4d056e0bacee41742486badd71cf8`. The spinner fix is already in the fork. The full upgrade changes how chat messages are stored and requires separate migration and compatibility testing. The Windows startup fix `4cf955b95cf71152ec5d9bd261df4b6ab05f4174` addresses the newer managed machines module, which this fork does not include.
+
+Backported the [MDX loader fix](https://github.com/open-webui/open-webui/commit/d8212c6865c988fc1182b6ef477cc5fbf4c14e44) on `codex/upstream-2026-11-26`. Adding `mdx` to the recognised text extensions lets Docling and Tika configurations read those uploads locally even when the browser gives them a generic MIME type. The default loader already read MDX as text on this fork.
+
+The isolated comparison used both versions of the actual loader methods with the same installed LangChain text loader. Twelve MDX checks covered Docling, Tika, uppercase extensions and missing or generic MIME values. Ten control checks covered Markdown, PDF routing and the default loader. The synthetic content included Unicode and JSX. Remote extractor constructors were stubbed. All 23 frontend and 47 backend regressions passed in the isolated worktree. The patch touches document loader classification. The inference route and CPU request settings use their existing code paths.
+
+The next stable checkpoint is `926f826eaef6179c092a936eede6c7363e425975`. Additional evidence and deferred candidates are recorded in `.codex-runtime-check/upstream-maintenance-2026-11-26.json`. The monthly schedule review is due 9 December.

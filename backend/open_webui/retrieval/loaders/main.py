@@ -86,6 +86,7 @@ known_source_ext = [
     'yaml',
     'yml',
     'toml',
+    'mdx',
 ]
 
 
